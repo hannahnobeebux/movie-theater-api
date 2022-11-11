@@ -1,5 +1,5 @@
 const {Router} = require('express')
-const { validationResult } = require('express-validator')
+const { validationResult, body } = require('express-validator')
 const validateShow = require('../middleware/validateShow')
 const db = require('../db/db')
 const {Show} = require("../models/Show")
@@ -60,9 +60,17 @@ showRouter.put("/shows/:showNum/:rating", async (req,res) => {
     }
 })
 
-showRouter.put("/shows/:showNum/ratingShow/watched", async (req,res) => {
+showRouter.put("/shows/:showNum/ratingShow/watched",
+body('rating').notEmpty().withMessage("Rating cannot be left blank").custom(value => !/\s/.test(value)).withMessage("Rating cannot contain whitespace"), 
+async (req,res) => {
     const show = await Show.findOne({where: {id:req.params.showNum}})   
     const rating = req.body.rating 
+
+    const errors = validationResult(req)
+    if(!errors.isEmpty()){
+        return res.status(400).send(errors)
+    }
+    
     if(show) {
         await show.update({
             rating: req.body.rating
@@ -80,11 +88,10 @@ showRouter.put("/shows/:showNum/updatingShow/updates", async (req,res) => {
     if (req.body.status === "watched" || req.body.status === "on-going" || req.body.status === "cancelled" && show) {
         await show.update ({
             status: req.body.status
-        }
+        })
         // , {
         //     where: {d:req.params.showNum}
         // }
-        )
         res.status(200).send(`The show ${show.title} has been updated with a status of ${req.body.status}`)
         // const status = req.body.status
         // return res.status(200).send("Valid update")

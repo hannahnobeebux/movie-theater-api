@@ -52,6 +52,7 @@ userRouter.put("/users/:num/shows/:showNum", validateUser, async (req,res) => {
         userId: req.params.num
     })
 
+
     res.status(200).send(`The show with id of ${req.params.showNum} has been added to the user with id of ${req.params.num} \n ${JSON.stringify(newShow, null, 2)}`)
 
     // if (user) {
