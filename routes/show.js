@@ -5,6 +5,17 @@ const db = require('../db/db')
 const {Show} = require("../models/Show")
 validateRatingAndShow = require('../middleware/validateRatingAndShow.js')
 
+//TESTING 
+//1 GET - localhost:3000/shows (return all)
+//2 GET - localhost:3000/shows/6 (finding a specific show)
+//3 GET - localhost:3000/shows/title/X-Files (finding a specific show)
+//4 GET - localhost:3000/shows/genres/Sitcom (finding a specific genre)
+//5 PUT - localhost:3000/shows/11/3.5 (changing the rating of the 11th show to "3.5")
+//6 PUT - localhost:3000/shows/5/ratingShow/watched (will change the rating of the 5th show to whatever integer/float is passed in the body)
+//7 PUT - localhost:3000/shows/6/updatingShows/updates (will change the status of the 6th show to whatever *valid status is passed in the body)
+//8 DELETE- localhost:3000/shows/1/deletingShow/delete (will delete the 1st show)
+
+
 //CREATING SHOW ROUTER 
 const showRouter = Router()
 
@@ -58,7 +69,7 @@ showRouter.get("/shows/genres/:genre", async (req,res) => {
     const showsGenre = await Show.findAll({where: {genre: req.params.genre}})
     const errors = validationResult(showsGenre)
     if (errors.isEmpty()) {
-        res.status(200).send(`These are all the shows with the genre ${req.params.genre} \n ${JSON.stringify(showsGenre, null, 2)}`)
+        res.status(200).send(`These are all the shows with the genre: ${req.params.genre} \n ${JSON.stringify(showsGenre, null, 2)}`)
     } else {
         res.status(400).send(`Unable to find genre ${req.params.genre}`)
     }
@@ -69,7 +80,7 @@ showRouter.get("/shows/genres/:genre", async (req,res) => {
 //For example, a PUT request to /shows/4/watched would update the 4th show that has been watched.
 //---LINK---
 //localhost:3000/shows/2/5 
-//THIS WILL CHANGE THE SHOW RATING FOR SHOWN WITH ID 2 TO 5
+//THIS WILL CHANGE THE SHOW RATING FOR SHOW WITH ID 2 TO 5
 showRouter.put("/shows/:showNum/:rating", async (req,res) => {
     const show = await Show.findOne({where: {id:req.params.showNum}})
     if (show) {
@@ -100,15 +111,6 @@ async (req,res) => {
     if(!errors.isEmpty()){
         return res.status(400).send(errors)
     }
-    
-    // if(show) {
-    //     await show.update({
-    //         rating: req.body.rating
-    //     })
-    //     res.status(200).send(`The show ${show.title} has been updated with a rating of ${rating} [via body]`)
-    // } else {
-    //     res.status(400).send("Unable to update the rating on this show")
-    // }
 
     await req.show.update({
         rating: req.body.rating
