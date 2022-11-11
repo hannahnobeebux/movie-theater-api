@@ -13,11 +13,13 @@ const showRouter = Router()
 //---LINK---
 //localhost:3000/shows
 showRouter.get("/shows", async (req, res) => {
-    res.status(200).send(await Show.findAll())
+    // res.status(200).send(await Show.findAll())
+    const shows = await Show.findAll()
+    res.status(200).send(`All shows: \n ${JSON.stringify(shows, null, 2)}`)
 })
 
 //---INSTRUCTIONS---
-//The Show Router should GET one show from the database using an endpoint.
+//The Show Router should GET one show from the database using an endpoint. (using ID)
 //---LINK---
 //localhost:3000/shows/1 
 showRouter.get("/shows/:num", async (req, res) => {
@@ -25,11 +27,28 @@ showRouter.get("/shows/:num", async (req, res) => {
     //using express-validator
     const errors = validationResult(show)
     if (errors.isEmpty()) {
-        res.status(200).send(show)
+        res.status(200).send(`This is the infomation we have about ${show.title} : \n ${JSON.stringify(show, null, 2)}`)
     } else {
         res.status(400).send("Show not found")
     }
 })
+
+//---INSTRUCTIONS---
+//The Show Router should GET one show from the database using an endpoint. (using title)
+//---LINK---
+//localhost:3000/shows/title/Avatar
+showRouter.get("/shows/title/:titleName", async (req,res) => {
+    // const title = (req.params.titleName).replace("_", " ")
+    const show = await Show.findOne({where: {title:req.params.titleName}})
+
+    const errors = validationResult(show)
+    if (errors.isEmpty()) {
+        res.status(200).send(`This is the infomation we have about ${show.title} : \n ${JSON.stringify(show, null, 2)}`)
+    } else {
+        res.status(400).send(`${show.title} not found`)
+    }
+})
+
 
 //---INSTRUCTIONS---
 //The Show Router should get shows of a specific genre using an endpoint.
@@ -39,9 +58,9 @@ showRouter.get("/shows/genres/:genre", async (req,res) => {
     const showsGenre = await Show.findAll({where: {genre: req.params.genre}})
     const errors = validationResult(showsGenre)
     if (errors.isEmpty()) {
-        res.status(200).send(showsGenre)
+        res.status(200).send(`These are all the shows with the genre ${req.params.genre} \n ${JSON.stringify(showsGenre, null, 2)}`)
     } else {
-        res.status(400).send("Unable to find genre")
+        res.status(400).send(`Unable to find genre ${req.params.genre}`)
     }
 })
 
@@ -59,7 +78,7 @@ showRouter.put("/shows/:showNum/:rating", async (req,res) => {
             {
                 rating:rating
             })
-        res.status(200).send(show)
+        res.status(200).send(`${show.title} has been updated to have a rating of ${show.rating} [via endpoint]`)
     } else {
         res.status(400).send("Unable to update rating")
         console.log(errors)
@@ -74,22 +93,27 @@ showRouter.put("/shows/:showNum/ratingShow/watched",
 body('rating').notEmpty().withMessage("Rating cannot be left blank").custom(value => !/\s/.test(value)).withMessage("Rating cannot contain whitespace"), 
 validateRatingAndShow,
 async (req,res) => {
-    const show = await Show.findOne({where: {id:req.params.showNum}})   
-    const rating = req.body.rating 
+    // const show = await Show.findOne({where: {id:req.params.showNum}})   
+    // const rating = req.body.rating 
 
     const errors = validationResult(req)
     if(!errors.isEmpty()){
         return res.status(400).send(errors)
     }
     
-    if(show) {
-        await show.update({
-            rating: req.body.rating
-        })
-        res.status(200).send(`The show ${show.title} has been updated with a rating of ${rating}`)
-    } else {
-        res.status(400).send("Unable to update the rating on this show")
-    }
+    // if(show) {
+    //     await show.update({
+    //         rating: req.body.rating
+    //     })
+    //     res.status(200).send(`The show ${show.title} has been updated with a rating of ${rating} [via body]`)
+    // } else {
+    //     res.status(400).send("Unable to update the rating on this show")
+    // }
+
+    await req.show.update({
+        rating: req.body.rating
+    })
+    res.status(200).send(`The show ${req.show.title} has been updated with a rating of ${req.show.rating} [via body]`)
 })
 
 //---INSTRUCTIONS---
@@ -97,18 +121,21 @@ async (req,res) => {
 //For example, a PUT request with the endpoint /shows/3/updates should be able to update the 3rd show to “canceled” or “on-going”.
 //---LINK---
 //localhost:3000/shows/2/updatingShows/updates
-showRouter.put("/shows/:showNum/updatingShow/updates", 
-body('status').notEmpty().withMessage("Status cannot be left blank").isLength({min:5, max:25}).custom(value => !/\s/.test(value)).withMessage("Status cannot contain whitespace"), 
+
+showRouter.put("/shows/:showNum/updatingShows/updates", 
+body('status').notEmpty().withMessage("Status cannot be left blank").isLength({min:5, max:25}).withMessage("Must be between 5 and 25 characters").custom(value => !/\s/.test(value)).withMessage("Status cannot contain whitespace"), 
 async (req,res) => {
     const show = await Show.findOne({where: {id:req.params.showNum}})
-    if (req.body.status === "watched" || req.body.status === "on-going" || req.body.status === "cancelled" && show) {
+    const errors = validationResult(show)
+    if ((req.body.status === "watched" || req.body.status === "on-going" || req.body.status === "cancelled" || req.body.status === "watching")) {
         await show.update ({
             status: req.body.status
         })
-        res.status(200).send(`The show ${show.title} has been updated with a status of ${req.body.status}`)
+        return res.status(200).send(`The show ${show.title} has been updated with a status of ${req.body.status} [via body]`)
     } else {
-        res.status(400).send("Invalid update")
+        res.status(400).send("Invalid update, please try again")
     }
+    console.log(errors)
 })
 
 //---INSTRUCTIONS---
@@ -119,8 +146,10 @@ showRouter.delete("/shows/:showNum/deletingShow/delete", async (req,res) => {
     const show = await Show.findOne({where: {id:req.params.showNum}})
     if(show) {
         show.destroy()
-        res.status(200).send("Successfully deleted the show")
-    } 
+        res.status(200).send(`Successfully deleted ${show.title}`)
+    } else {
+        res.status(400).send("Cannot find show")
+    }
 })
 
 

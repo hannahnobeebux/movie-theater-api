@@ -17,7 +17,7 @@ userRouter.get("/users", async (req, res) => {
 //The User Router should GET one user from the database using an endpoint.
 //localhost:3000/users/1 
 userRouter.get("/users/:num", validateUser, async (req, res) => {
-    res.status(200).send(`This is the user with id of ${req.params.num}: \n ${JSON.stringify(req.user, null, 2)}`)
+    res.status(200).send(`This is the ${req.user.username} with id of ${req.params.num}: \n ${JSON.stringify(req.user, null, 2)}`)
 })
 
 //---INSTRUCTIONS---
