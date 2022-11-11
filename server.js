@@ -22,6 +22,8 @@ app.use("/", showRouter)
 app.listen(3000, async () => {
     // await db.sync()
     //everytime the server is rerun the tables+db is dropped and recreated 
+
+    //this will delete and create the data each time the file is saved 
     await seed()
     console.log("Listening on port 3000")
 })
